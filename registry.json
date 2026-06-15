@@ -1,0 +1,22 @@
+[
+  {
+    "slug": "whois-rdap",
+    "name": "WHOIS (RDAP)",
+    "vendor": "IANA RDAP",
+    "category": "ENRICHMENT",
+    "description": "Domain and IP registration lookup via the public RDAP protocol. No API key required. Supports domain and IP lookups with full registration data including nameservers, creation/expiry dates, and registrar info.",
+    "version": "1.0.0",
+    "author": "LibraCyber",
+    "manifestUrl": "https://raw.githubusercontent.com/lvirzi/cyber-soar-public-packages/main/integrations/whois-rdap/manifest.json",
+    "tags": [
+      "whois",
+      "enrichment",
+      "ioc",
+      "domain",
+      "ip",
+      "free",
+      "no-auth"
+    ],
+    "publishedAt": "2026-06-15T08:57:56.998Z"
+  }
+]
