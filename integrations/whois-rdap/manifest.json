@@ -1,0 +1,85 @@
+{
+  "slug": "whois-rdap",
+  "name": "WHOIS (RDAP)",
+  "vendor": "IANA RDAP",
+  "description": "Domain and IP registration lookup via the public RDAP protocol. No API key required. Supports domain and IP lookups with full registration data including nameservers, creation/expiry dates, and registrar info.",
+  "category": "ENRICHMENT",
+  "version": "1.0.0",
+  "auth": {
+    "type": "none",
+    "credField": ""
+  },
+  "baseUrl": "https://rdap.org",
+  "defaultHeaders": {
+    "Accept": "application/rdap+json"
+  },
+  "actions": [
+    {
+      "slug": "lookup_domain",
+      "name": "WHOIS Domain Lookup",
+      "description": "Registration data for a domain name",
+      "method": "GET",
+      "path": "/domain/{{domain}}",
+      "output": {
+        "mappings": {
+          "domain": "ldhName",
+          "status": "status",
+          "nameservers": "nameservers[*].ldhName",
+          "creation_date": "events[?eventAction=='registration'].eventDate | [0]",
+          "expiry_date": "events[?eventAction=='expiration'].eventDate | [0]",
+          "registrar": "entities[?roles[?@ == 'registrar']].vcardArray[1][?@[0] == 'fn'] | [0][0][3]"
+        }
+      },
+      "timeoutSeconds": 15,
+      "retryable": true
+    },
+    {
+      "slug": "lookup_ip",
+      "name": "WHOIS IP Lookup",
+      "description": "Network registration data for an IPv4 or IPv6 address",
+      "method": "GET",
+      "path": "/ip/{{ip}}",
+      "output": {
+        "mappings": {
+          "network": "handle",
+          "org": "name",
+          "country": "country"
+        }
+      },
+      "timeoutSeconds": 15,
+      "retryable": true
+    }
+  ],
+  "cliCommands": [
+    {
+      "name": "domain",
+      "actionSlug": "lookup_domain",
+      "description": "WHOIS lookup for a domain name",
+      "params": [
+        {
+          "name": "domain",
+          "field": "domain",
+          "description": "Domain name (e.g. example.com)"
+        }
+      ]
+    },
+    {
+      "name": "ip",
+      "actionSlug": "lookup_ip",
+      "description": "WHOIS lookup for an IP address",
+      "params": [
+        {
+          "name": "ip",
+          "field": "ip",
+          "description": "IPv4 or IPv6 address"
+        }
+      ]
+    }
+  ],
+  "healthcheck": {
+    "actionSlug": "lookup_domain",
+    "testInput": {
+      "domain": "example.com"
+    }
+  }
+}
