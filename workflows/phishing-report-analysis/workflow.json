@@ -1,0 +1,878 @@
+{
+  "name": "Phishing Report Analysis — POP3/Graph Mail",
+  "description": "Analisi automatica delle segnalazioni di phishing. Estrae IOC, esegue enrichment parallelo con VirusTotal e WHOIS. Tuning: se il dominio ha >= 10 voti harmless su VT → trusted (LOW, no alert); se malicious >= 5 → HIGH; se malicious >= 3 → MEDIUM; altrimenti LOW.",
+  "status": "ACTIVE",
+  "tags": [
+    "phishing",
+    "email-security",
+    "virustotal",
+    "whois",
+    "enrichment",
+    "automated-response"
+  ],
+  "definition": {
+    "nodes": [
+      {
+        "id": "n1-trigger",
+        "type": "trigger",
+        "position": {
+          "x": 400,
+          "y": 40
+        },
+        "data": {
+          "label": "Phishing Report Received",
+          "nodeType": "INCIDENT_CREATED",
+          "config": {
+            "incidentType": ""
+          }
+        }
+      },
+      {
+        "id": "n2-check-subject",
+        "type": "logic",
+        "position": {
+          "x": 400,
+          "y": 180
+        },
+        "data": {
+          "label": "Is Phishing Report?",
+          "nodeType": "IF_ELSE",
+          "config": {
+            "condition": "{{incident.title}} contains New Feedback from"
+          }
+        }
+      },
+      {
+        "id": "n3-noop-exit",
+        "type": "action",
+        "position": {
+          "x": 700,
+          "y": 180
+        },
+        "data": {
+          "label": "Not a Phishing Report — Exit",
+          "nodeType": "NO_OP",
+          "config": {}
+        }
+      },
+      {
+        "id": "n4-extract-reporter",
+        "type": "transform",
+        "position": {
+          "x": 400,
+          "y": 340
+        },
+        "data": {
+          "label": "Extract Reporter Email",
+          "nodeType": "DATA_TRANSFORM",
+          "config": {
+            "inputExpression": "{{incident.title}}",
+            "outputPath": "phishing_reporter",
+            "transformations": [
+              {
+                "id": "t1",
+                "type": "regex_extract",
+                "params": {
+                  "pattern": "New Feedback from .([a-zA-Z0-9._%+@\\-]+) reporting",
+                  "flags": "i",
+                  "group": "1"
+                }
+              },
+              {
+                "id": "t2",
+                "type": "trim",
+                "params": {}
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "n5-extract-reported",
+        "type": "transform",
+        "position": {
+          "x": 400,
+          "y": 500
+        },
+        "data": {
+          "label": "Extract Reported Email",
+          "nodeType": "DATA_TRANSFORM",
+          "config": {
+            "inputExpression": "{{incident.title}}",
+            "outputPath": "phishing_reported_email",
+            "transformations": [
+              {
+                "id": "t1",
+                "type": "regex_extract",
+                "params": {
+                  "pattern": "reporting .([a-zA-Z0-9._%+@\\-]+)",
+                  "flags": "i",
+                  "group": "1"
+                }
+              },
+              {
+                "id": "t2",
+                "type": "trim",
+                "params": {}
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "n6-extract-reported-domain",
+        "type": "transform",
+        "position": {
+          "x": 400,
+          "y": 660
+        },
+        "data": {
+          "label": "Extract Reported Domain",
+          "nodeType": "DATA_TRANSFORM",
+          "config": {
+            "inputExpression": "{{phishing_reported_email}}",
+            "outputPath": "phishing_reported_domain",
+            "transformations": [
+              {
+                "id": "t1",
+                "type": "regex_extract",
+                "params": {
+                  "pattern": "([a-zA-Z0-9-]+\\.[a-zA-Z]{2,})$",
+                  "flags": "i",
+                  "group": "1"
+                }
+              },
+              {
+                "id": "t2",
+                "type": "trim",
+                "params": {}
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "n7-extract-feedback",
+        "type": "transform",
+        "position": {
+          "x": 400,
+          "y": 820
+        },
+        "data": {
+          "label": "Extract User Feedback",
+          "nodeType": "DATA_TRANSFORM",
+          "config": {
+            "inputExpression": "{{email.bodyText}}",
+            "outputPath": "phishing_user_feedback",
+            "transformations": [
+              {
+                "id": "t1",
+                "type": "regex_extract",
+                "params": {
+                  "pattern": "Additional user feedback:\\s*(.+?)(?:\\n|$)",
+                  "flags": "is",
+                  "group": "1"
+                }
+              },
+              {
+                "id": "t2",
+                "type": "trim",
+                "params": {}
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "n8-write-context",
+        "type": "transform",
+        "position": {
+          "x": 400,
+          "y": 980
+        },
+        "data": {
+          "label": "Store Reporter in Context",
+          "nodeType": "WRITE_CONTEXT",
+          "config": {
+            "path": "phishing.reporter",
+            "value": "{{phishing_reporter}}"
+          }
+        }
+      },
+      {
+        "id": "n8b-write-reported",
+        "type": "transform",
+        "position": {
+          "x": 400,
+          "y": 1100
+        },
+        "data": {
+          "label": "Store Reported Email",
+          "nodeType": "WRITE_CONTEXT",
+          "config": {
+            "path": "phishing.reported",
+            "value": "{{phishing_reported_email}}"
+          }
+        }
+      },
+      {
+        "id": "n8c-write-feedback",
+        "type": "transform",
+        "position": {
+          "x": 400,
+          "y": 1220
+        },
+        "data": {
+          "label": "Store User Feedback",
+          "nodeType": "WRITE_CONTEXT",
+          "config": {
+            "path": "phishing.user_feedback",
+            "value": "{{phishing_user_feedback}}"
+          }
+        }
+      },
+      {
+        "id": "n9-extract-urls",
+        "type": "transform",
+        "position": {
+          "x": 400,
+          "y": 1380
+        },
+        "data": {
+          "label": "Extract URLs from Body",
+          "nodeType": "DATA_TRANSFORM",
+          "config": {
+            "inputExpression": "{{email.bodyText}}",
+            "outputPath": "phishing_urls",
+            "transformations": [
+              {
+                "id": "t1",
+                "type": "extract_urls",
+                "params": {}
+              },
+              {
+                "id": "t2",
+                "type": "unique",
+                "params": {}
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "n10-extract-ips",
+        "type": "transform",
+        "position": {
+          "x": 400,
+          "y": 1540
+        },
+        "data": {
+          "label": "Extract IPs from Body",
+          "nodeType": "DATA_TRANSFORM",
+          "config": {
+            "inputExpression": "{{email.bodyText}}",
+            "outputPath": "phishing_ips",
+            "transformations": [
+              {
+                "id": "t1",
+                "type": "extract_ips",
+                "params": {}
+              },
+              {
+                "id": "t2",
+                "type": "unique",
+                "params": {}
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "n11-first-url",
+        "type": "transform",
+        "position": {
+          "x": 400,
+          "y": 1700
+        },
+        "data": {
+          "label": "Get First URL",
+          "nodeType": "DATA_TRANSFORM",
+          "config": {
+            "inputExpression": "{{phishing_urls}}",
+            "outputPath": "phishing_first_url",
+            "transformations": [
+              {
+                "id": "t1",
+                "type": "first",
+                "params": {}
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "n12-first-ip",
+        "type": "transform",
+        "position": {
+          "x": 400,
+          "y": 1860
+        },
+        "data": {
+          "label": "Get First IP",
+          "nodeType": "DATA_TRANSFORM",
+          "config": {
+            "inputExpression": "{{phishing_ips}}",
+            "outputPath": "phishing_first_ip",
+            "transformations": [
+              {
+                "id": "t1",
+                "type": "first",
+                "params": {}
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "n13-parallel",
+        "type": "logic",
+        "position": {
+          "x": 400,
+          "y": 2020
+        },
+        "data": {
+          "label": "Parallel Enrichment",
+          "nodeType": "PARALLEL",
+          "config": {}
+        }
+      },
+      {
+        "id": "n14a-vt-url",
+        "type": "integration",
+        "position": {
+          "x": 120,
+          "y": 2200
+        },
+        "data": {
+          "label": "VT — Domain Lookup A",
+          "nodeType": "INTEGRATION_ACTION",
+          "config": {
+            "integrationSlug": "virustotal",
+            "actionSlug": "lookup_domain",
+            "installedIntegrationId": "",
+            "outputVariable": "vt_url",
+            "inputs": {
+              "domain": "{{phishing_reported_domain}}"
+            }
+          }
+        }
+      },
+      {
+        "id": "n14b-vt-domain",
+        "type": "integration",
+        "position": {
+          "x": 120,
+          "y": 2380
+        },
+        "data": {
+          "label": "VT — Domain Lookup",
+          "nodeType": "INTEGRATION_ACTION",
+          "config": {
+            "integrationSlug": "virustotal",
+            "actionSlug": "lookup_domain",
+            "installedIntegrationId": "",
+            "outputVariable": "vt_domain",
+            "inputs": {
+              "domain": "{{phishing_reported_domain}}"
+            }
+          }
+        }
+      },
+      {
+        "id": "n14c-vt-ip",
+        "type": "integration",
+        "position": {
+          "x": 680,
+          "y": 2200
+        },
+        "data": {
+          "label": "VT — IP Lookup",
+          "nodeType": "INTEGRATION_ACTION",
+          "config": {
+            "integrationSlug": "virustotal",
+            "actionSlug": "lookup_ip",
+            "installedIntegrationId": "",
+            "outputVariable": "vt_ip",
+            "inputs": {
+              "ip": "{{phishing_first_ip}}"
+            }
+          }
+        }
+      },
+      {
+        "id": "n14d-whois",
+        "type": "integration",
+        "position": {
+          "x": 680,
+          "y": 2380
+        },
+        "data": {
+          "label": "WHOIS — Domain Lookup",
+          "nodeType": "INTEGRATION_ACTION",
+          "config": {
+            "integrationSlug": "whois-rdap",
+            "actionSlug": "lookup_domain",
+            "installedIntegrationId": "",
+            "outputVariable": "whois_domain",
+            "inputs": {
+              "domain": "{{phishing_reported_domain}}"
+            }
+          }
+        }
+      },
+      {
+        "id": "n15-merge",
+        "type": "transform",
+        "position": {
+          "x": 400,
+          "y": 2560
+        },
+        "data": {
+          "label": "Merge Enrichment Results",
+          "nodeType": "MERGE",
+          "config": {}
+        }
+      },
+      {
+        "id": "n16-compute-score",
+        "type": "transform",
+        "position": {
+          "x": 400,
+          "y": 2720
+        },
+        "data": {
+          "label": "Extract Malicious Score",
+          "nodeType": "JMESPATH",
+          "config": {
+            "query": "vt_domain.malicious",
+            "output_var": "total_malicious"
+          }
+        }
+      },
+      {
+        "id": "n16b-harmless-score",
+        "type": "transform",
+        "position": {
+          "x": 400,
+          "y": 2860
+        },
+        "data": {
+          "label": "Extract Harmless Score",
+          "nodeType": "JMESPATH",
+          "config": {
+            "query": "vt_domain.harmless",
+            "output_var": "harmless_score"
+          }
+        }
+      },
+      {
+        "id": "n17b-if-trusted",
+        "type": "logic",
+        "position": {
+          "x": 400,
+          "y": 3000
+        },
+        "data": {
+          "label": "Trusted Domain? (harmless >= 10)",
+          "nodeType": "IF_ELSE",
+          "config": {
+            "condition": "{{harmless_score}} >= 10"
+          }
+        }
+      },
+      {
+        "id": "n17-if-attachments",
+        "type": "logic",
+        "position": {
+          "x": 400,
+          "y": 3160
+        },
+        "data": {
+          "label": "Has Suspicious URL?",
+          "nodeType": "IF_ELSE",
+          "config": {
+            "condition": "{{phishing_first_url}} != "
+          }
+        }
+      },
+      {
+        "id": "n18-detonate-url",
+        "type": "sandbox",
+        "position": {
+          "x": 120,
+          "y": 3340
+        },
+        "data": {
+          "label": "Detonate Suspicious URL",
+          "nodeType": "DETONATE_URL",
+          "config": {
+            "url": "{{phishing_first_url}}",
+            "sandbox": "any_run"
+          }
+        }
+      },
+      {
+        "id": "n19-if-malicious",
+        "type": "logic",
+        "position": {
+          "x": 400,
+          "y": 3520
+        },
+        "data": {
+          "label": "High Risk? (malicious >= 5)",
+          "nodeType": "IF_ELSE",
+          "config": {
+            "condition": "{{total_malicious}} >= 5"
+          }
+        }
+      },
+      {
+        "id": "n20-update-high",
+        "type": "action",
+        "position": {
+          "x": 120,
+          "y": 3700
+        },
+        "data": {
+          "label": "Set HIGH Risk — Phishing Confirmed",
+          "nodeType": "UPDATE_INCIDENT",
+          "config": {
+            "severity": "HIGH",
+            "status": "RESOLVED",
+            "notes": "PHISHING CONFIRMED (auto-resolved) — VT malicious: {{total_malicious}}, harmless: {{harmless_score}}. Reported: {{phishing_reported_email}}. Registrar: {{whois_domain.registrar}}. Feedback: {{phishing_user_feedback}}"
+          }
+        }
+      },
+      {
+        "id": "n21-notify-soc-high",
+        "type": "human",
+        "position": {
+          "x": 120,
+          "y": 3860
+        },
+        "data": {
+          "label": "Notify SOC — Phishing Confirmed",
+          "nodeType": "NOTIFICATION",
+          "config": {
+            "message": "PHISHING CONFIRMED — {{total_malicious}} VT detections (harmless: {{harmless_score}}). Reporter: {{phishing_reporter}} | Reported: {{phishing_reported_email}} | Domain: {{phishing_reported_domain}}",
+            "targetType": "all_analysts"
+          }
+        }
+      },
+      {
+        "id": "n22-email-malicious",
+        "type": "action",
+        "position": {
+          "x": 120,
+          "y": 4020
+        },
+        "data": {
+          "label": "Email Reporter — Phishing Confirmed",
+          "nodeType": "SEND_EMAIL",
+          "config": {
+            "to": "{{email.from}}",
+            "subject": "Phishing Report Confirmed — {{phishing_reported_email}}",
+            "body": "Dear {{email.from}},\n\nThank you for reporting the suspicious email from {{phishing_reported_email}}.\n\nVERDICT: PHISHING CONFIRMED\n\nOur automated analysis detected {{total_malicious}} malicious indicators (VT harmless votes: {{harmless_score}}).\n\nDetails:\n- Reported sender: {{phishing_reported_email}}\n- Domain: {{phishing_reported_domain}}\n- Domain registration: {{whois_domain.registrar}}\n- VirusTotal malicious: {{vt_domain.malicious}}\n- VirusTotal suspicious: {{vt_domain.suspicious}}\n- VirusTotal harmless: {{vt_domain.harmless}}\n\nAction taken: The incident has been escalated to our SOC team.\n\nRecommendations:\n1. Do NOT click any links in the reported email\n2. Do NOT open any attachments\n3. If you already interacted with the email, contact IT Security immediately\n\nYour feedback: \"{{phishing_user_feedback}}\"\n\nCyber SOAR — Security Operations Center\nIncident Reference: {{incidentId}}"
+          }
+        }
+      },
+      {
+        "id": "n23-if-suspicious",
+        "type": "logic",
+        "position": {
+          "x": 680,
+          "y": 3700
+        },
+        "data": {
+          "label": "Suspicious? (malicious >= 3)",
+          "nodeType": "IF_ELSE",
+          "config": {
+            "condition": "{{total_malicious}} >= 3"
+          }
+        }
+      },
+      {
+        "id": "n24-update-medium",
+        "type": "action",
+        "position": {
+          "x": 560,
+          "y": 3860
+        },
+        "data": {
+          "label": "Set MEDIUM Risk — Under Review",
+          "nodeType": "UPDATE_INCIDENT",
+          "config": {
+            "severity": "MEDIUM",
+            "status": "RESOLVED",
+            "notes": "SUSPICIOUS (auto-resolved) — VT malicious: {{total_malicious}} (threshold: 3), harmless: {{harmless_score}}. Under review flag set. Reported: {{phishing_reported_email}}. Feedback: {{phishing_user_feedback}}"
+          }
+        }
+      },
+      {
+        "id": "n25-email-suspicious",
+        "type": "action",
+        "position": {
+          "x": 560,
+          "y": 4020
+        },
+        "data": {
+          "label": "Email Reporter — Under Review",
+          "nodeType": "SEND_EMAIL",
+          "config": {
+            "to": "{{email.from}}",
+            "subject": "Phishing Report Under Review — {{phishing_reported_email}}",
+            "body": "Dear {{email.from}},\n\nThank you for reporting the suspicious email from {{phishing_reported_email}}.\n\nVERDICT: SUSPICIOUS — UNDER REVIEW\n\nOur automated analysis detected {{total_malicious}} indicator(s) that require manual review.\n\nDetails:\n- Reported sender: {{phishing_reported_email}}\n- Domain: {{phishing_reported_domain}}\n- VirusTotal malicious: {{vt_domain.malicious}}\n- VirusTotal harmless: {{vt_domain.harmless}}\n\nRecommendation: Exercise caution with this email. Do not click links or open attachments until you receive our final verdict.\n\nYour feedback: \"{{phishing_user_feedback}}\"\n\nCyber SOAR — Security Operations Center\nIncident Reference: {{incidentId}}"
+          }
+        }
+      },
+      {
+        "id": "n26-update-low",
+        "type": "action",
+        "position": {
+          "x": 860,
+          "y": 3700
+        },
+        "data": {
+          "label": "Set LOW Risk — No Threat",
+          "nodeType": "UPDATE_INCIDENT",
+          "config": {
+            "severity": "LOW",
+            "status": "RESOLVED",
+            "notes": "LOW RISK — VT malicious: {{total_malicious}}, harmless: {{harmless_score}} (trusted if >= 10). Reported: {{phishing_reported_email}}. Feedback: {{phishing_user_feedback}}"
+          }
+        }
+      },
+      {
+        "id": "n27-email-clean",
+        "type": "action",
+        "position": {
+          "x": 860,
+          "y": 3860
+        },
+        "data": {
+          "label": "Email Reporter — No Threat Detected",
+          "nodeType": "SEND_EMAIL",
+          "config": {
+            "to": "{{email.from}}",
+            "subject": "Phishing Report Reviewed — No Threat Detected — {{phishing_reported_email}}",
+            "body": "Dear {{email.from}},\n\nThank you for reporting the email from {{phishing_reported_email}}.\n\nVERDICT: NO THREAT DETECTED\n\nOur automated analysis did not find significant malicious indicators for the reported sender.\n\nDetails:\n- Reported sender: {{phishing_reported_email}}\n- Domain: {{phishing_reported_domain}}\n- VirusTotal malicious: {{vt_domain.malicious}}\n- VirusTotal harmless: {{vt_domain.harmless}} (trusted domain threshold: 10)\n- WHOIS registration: {{whois_domain.registrar}}\n\nThe email appears to be from a legitimate sender. If you continue to feel uncertain, please contact your IT Security team.\n\nYour feedback: \"{{phishing_user_feedback}}\"\n\nCyber SOAR — Security Operations Center\nIncident Reference: {{incidentId}}"
+          }
+        }
+      }
+    ],
+    "edges": [
+      {
+        "id": "e1-2",
+        "source": "n1-trigger",
+        "target": "n2-check-subject"
+      },
+      {
+        "id": "e2f-3",
+        "source": "n2-check-subject",
+        "target": "n3-noop-exit",
+        "sourceHandle": "false",
+        "label": "Not phishing report"
+      },
+      {
+        "id": "e2t-4",
+        "source": "n2-check-subject",
+        "target": "n4-extract-reporter",
+        "sourceHandle": "true",
+        "label": "Is phishing report"
+      },
+      {
+        "id": "e4-5",
+        "source": "n4-extract-reporter",
+        "target": "n5-extract-reported"
+      },
+      {
+        "id": "e5-6",
+        "source": "n5-extract-reported",
+        "target": "n6-extract-reported-domain"
+      },
+      {
+        "id": "e6-7",
+        "source": "n6-extract-reported-domain",
+        "target": "n7-extract-feedback"
+      },
+      {
+        "id": "e7-8",
+        "source": "n7-extract-feedback",
+        "target": "n8-write-context"
+      },
+      {
+        "id": "e8-8b",
+        "source": "n8-write-context",
+        "target": "n8b-write-reported"
+      },
+      {
+        "id": "e8b-8c",
+        "source": "n8b-write-reported",
+        "target": "n8c-write-feedback"
+      },
+      {
+        "id": "e8c-9",
+        "source": "n8c-write-feedback",
+        "target": "n9-extract-urls"
+      },
+      {
+        "id": "e9-10",
+        "source": "n9-extract-urls",
+        "target": "n10-extract-ips"
+      },
+      {
+        "id": "e10-11",
+        "source": "n10-extract-ips",
+        "target": "n11-first-url"
+      },
+      {
+        "id": "e11-12",
+        "source": "n11-first-url",
+        "target": "n12-first-ip"
+      },
+      {
+        "id": "e12-13",
+        "source": "n12-first-ip",
+        "target": "n13-parallel"
+      },
+      {
+        "id": "e13a-14a",
+        "source": "n13-parallel",
+        "target": "n14a-vt-url",
+        "sourceHandle": "a"
+      },
+      {
+        "id": "e13b-14c",
+        "source": "n13-parallel",
+        "target": "n14c-vt-ip",
+        "sourceHandle": "b"
+      },
+      {
+        "id": "e14a-14b",
+        "source": "n14a-vt-url",
+        "target": "n14b-vt-domain"
+      },
+      {
+        "id": "e14c-14d",
+        "source": "n14c-vt-ip",
+        "target": "n14d-whois"
+      },
+      {
+        "id": "e14b-15",
+        "source": "n14b-vt-domain",
+        "target": "n15-merge"
+      },
+      {
+        "id": "e14d-15",
+        "source": "n14d-whois",
+        "target": "n15-merge"
+      },
+      {
+        "id": "e15-16",
+        "source": "n15-merge",
+        "target": "n16-compute-score"
+      },
+      {
+        "id": "e16-16b",
+        "source": "n16-compute-score",
+        "target": "n16b-harmless-score"
+      },
+      {
+        "id": "e16b-17b",
+        "source": "n16b-harmless-score",
+        "target": "n17b-if-trusted"
+      },
+      {
+        "id": "e17bt-26",
+        "source": "n17b-if-trusted",
+        "target": "n26-update-low",
+        "sourceHandle": "true",
+        "label": "Trusted domain (harmless >= 10)"
+      },
+      {
+        "id": "e17bf-17",
+        "source": "n17b-if-trusted",
+        "target": "n17-if-attachments",
+        "sourceHandle": "false",
+        "label": "Not trusted — check detections"
+      },
+      {
+        "id": "e17t-18",
+        "source": "n17-if-attachments",
+        "target": "n18-detonate-url",
+        "sourceHandle": "true",
+        "label": "URL found"
+      },
+      {
+        "id": "e17f-19",
+        "source": "n17-if-attachments",
+        "target": "n19-if-malicious",
+        "sourceHandle": "false",
+        "label": "No URL"
+      },
+      {
+        "id": "e18-19",
+        "source": "n18-detonate-url",
+        "target": "n19-if-malicious"
+      },
+      {
+        "id": "e19t-20",
+        "source": "n19-if-malicious",
+        "target": "n20-update-high",
+        "sourceHandle": "true",
+        "label": ">=5 detections"
+      },
+      {
+        "id": "e19f-23",
+        "source": "n19-if-malicious",
+        "target": "n23-if-suspicious",
+        "sourceHandle": "false",
+        "label": "<5 detections"
+      },
+      {
+        "id": "e20-21",
+        "source": "n20-update-high",
+        "target": "n21-notify-soc-high"
+      },
+      {
+        "id": "e21-22",
+        "source": "n21-notify-soc-high",
+        "target": "n22-email-malicious"
+      },
+      {
+        "id": "e23t-24",
+        "source": "n23-if-suspicious",
+        "target": "n24-update-medium",
+        "sourceHandle": "true",
+        "label": ">=3 detections"
+      },
+      {
+        "id": "e23f-26b",
+        "source": "n23-if-suspicious",
+        "target": "n26-update-low",
+        "sourceHandle": "false",
+        "label": "0-2 detections"
+      },
+      {
+        "id": "e24-25",
+        "source": "n24-update-medium",
+        "target": "n25-email-suspicious"
+      },
+      {
+        "id": "e26-27",
+        "source": "n26-update-low",
+        "target": "n27-email-clean"
+      }
+    ]
+  }
+}
