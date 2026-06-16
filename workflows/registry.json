@@ -1,0 +1,20 @@
+[
+  {
+    "slug": "phishing-report-analysis",
+    "name": "Phishing Report Analysis — POP3/Graph Mail",
+    "description": "Analisi automatica delle segnalazioni di phishing. Estrae IOC, esegue enrichment parallelo con VirusTotal e WHOIS. Tuning: se il dominio ha >= 10 voti harmless su VT → trusted (LOW, no alert); se malicious >= 5 → HIGH; se malicious >= 3 → MEDIUM; altrimenti LOW.",
+    "version": "1.0.0",
+    "author": null,
+    "tags": [
+      "phishing",
+      "email-security",
+      "virustotal",
+      "whois",
+      "enrichment",
+      "automated-response"
+    ],
+    "workflowUrl": "https://raw.githubusercontent.com/lvirzi/cyber-soar-public-packages/main/workflows/phishing-report-analysis/workflow.json",
+    "nodeCount": 34,
+    "publishedAt": "2026-06-16T13:46:47.843Z"
+  }
+]
