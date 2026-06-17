@@ -395,52 +395,10 @@
         }
       },
       {
-        "id": "n14a-vt-url",
-        "type": "integration",
-        "position": {
-          "x": 120,
-          "y": 2200
-        },
-        "data": {
-          "label": "VT — Domain Lookup A",
-          "nodeType": "INTEGRATION_ACTION",
-          "config": {
-            "integrationSlug": "virustotal",
-            "actionSlug": "lookup_domain",
-            "installedIntegrationId": "",
-            "outputVariable": "vt_url",
-            "inputs": {
-              "domain": "{{phishing_reported_domain}}"
-            }
-          }
-        }
-      },
-      {
-        "id": "n14b-vt-domain",
-        "type": "integration",
-        "position": {
-          "x": 120,
-          "y": 2380
-        },
-        "data": {
-          "label": "VT — Domain Lookup",
-          "nodeType": "INTEGRATION_ACTION",
-          "config": {
-            "integrationSlug": "virustotal",
-            "actionSlug": "lookup_domain",
-            "installedIntegrationId": "",
-            "outputVariable": "vt_domain",
-            "inputs": {
-              "domain": "{{phishing_reported_domain}}"
-            }
-          }
-        }
-      },
-      {
         "id": "n14c-vt-ip",
         "type": "integration",
         "position": {
-          "x": 680,
+          "x": 400,
           "y": 2200
         },
         "data": {
@@ -461,7 +419,7 @@
         "id": "n14d-whois",
         "type": "integration",
         "position": {
-          "x": 680,
+          "x": 400,
           "y": 2380
         },
         "data": {
@@ -520,11 +478,24 @@
         }
       },
       {
+        "id": "n15d-update-ioc-scores",
+        "type": "action",
+        "position": {
+          "x": 400,
+          "y": 2680
+        },
+        "data": {
+          "label": "Update IOC Scores from VT",
+          "nodeType": "UPDATE_IOC_SCORES",
+          "config": {}
+        }
+      },
+      {
         "id": "n15c-url-max",
         "type": "transform",
         "position": {
           "x": 400,
-          "y": 2720
+          "y": 2760
         },
         "data": {
           "label": "Extract URL Max Malicious",
@@ -562,7 +533,7 @@
           "label": "Extract Harmless Score",
           "nodeType": "JMESPATH",
           "config": {
-            "query": "vt_domain.harmless",
+            "query": "(vt_url_scan_results || `[]`)[].harmless | [?@ != `null`] | max(@) || `0`",
             "output_var": "harmless_score"
           }
         }
@@ -674,7 +645,7 @@
           "config": {
             "to": "{{email.from}}",
             "subject": "Phishing Report Confirmed — {{phishing_reported_email}}",
-            "body": "Dear {{email.from}},\n\nThank you for reporting the suspicious email from {{phishing_reported_email}}.\n\nVERDICT: PHISHING CONFIRMED\n\nOur automated analysis detected {{total_malicious}} malicious indicators across multiple threat intelligence sources.\n\nDetails:\n- Reported sender: {{phishing_reported_email}}\n- Domain: {{phishing_reported_domain}}\n- Domain registration: {{whois_domain.registrar}}\n- VirusTotal (domain): {{vt_domain.malicious}} malicious, {{vt_domain.harmless}} harmless\n- VirusTotal (IP): {{vt_ip.malicious}} malicious ({{vt_ip.country}})\n- VirusTotal (URLs in email): see full report\n\nAction taken: The incident has been escalated to our SOC team.\n\nRecommendations:\n1. Do NOT click any links in the reported email\n2. Do NOT open any attachments\n3. If you already interacted with the email, contact IT Security immediately\n\nYour feedback: \"{{phishing_user_feedback}}\"\n\nCyber SOAR — Security Operations Center\nIncident Reference: {{incidentId}}"
+            "body": "Dear {{email.from}},\n\nThank you for reporting the suspicious email from {{phishing_reported_email}}.\n\nVERDICT: PHISHING CONFIRMED\n\nOur automated analysis detected {{total_malicious}} malicious indicators across multiple threat intelligence sources.\n\nDetails:\n- Reported sender: {{phishing_reported_email}}\n- Domain: {{phishing_reported_domain}}\n- Domain registration: {{whois_domain.registrar}}\n- VirusTotal (URLs in email): {{total_malicious}} max malicious detections\\n- VirusTotal (IP): {{vt_ip.malicious}} malicious ({{vt_ip.country}})\n- VirusTotal (URLs in email): see full report\n\nAction taken: The incident has been escalated to our SOC team.\n\nRecommendations:\n1. Do NOT click any links in the reported email\n2. Do NOT open any attachments\n3. If you already interacted with the email, contact IT Security immediately\n\nYour feedback: \"{{phishing_user_feedback}}\"\n\nCyber SOAR — Security Operations Center\nIncident Reference: {{incidentId}}"
           }
         }
       },
@@ -739,7 +710,7 @@
           "config": {
             "to": "{{email.from}}",
             "subject": "Phishing Report Under Review — {{phishing_reported_email}}",
-            "body": "Dear {{email.from}},\n\nThank you for reporting the suspicious email from {{phishing_reported_email}}.\n\nVERDICT: SUSPICIOUS — UNDER REVIEW\n\nOur automated analysis detected {{total_malicious}} indicator(s) that require manual review.\n\nDetails:\n- Reported sender: {{phishing_reported_email}}\n- Domain: {{phishing_reported_domain}}\n- VirusTotal (domain): {{vt_domain.malicious}} malicious, {{vt_domain.harmless}} harmless\n- VirusTotal (IP): {{vt_ip.malicious}} malicious\n\nRecommendation: Exercise caution with this email. Do not click links or open attachments until you receive our final verdict.\n\nYour feedback: \"{{phishing_user_feedback}}\"\n\nCyber SOAR — Security Operations Center\nIncident Reference: {{incidentId}}"
+            "body": "Dear {{email.from}},\n\nThank you for reporting the suspicious email from {{phishing_reported_email}}.\n\nVERDICT: SUSPICIOUS — UNDER REVIEW\n\nOur automated analysis detected {{total_malicious}} indicator(s) that require manual review.\n\nDetails:\n- Reported sender: {{phishing_reported_email}}\n- Domain: {{phishing_reported_domain}}\n- VirusTotal (URLs in email): {{total_malicious}} max malicious detections\\n- VirusTotal (IP): {{vt_ip.malicious}} malicious\n\nRecommendation: Exercise caution with this email. Do not click links or open attachments until you receive our final verdict.\n\nYour feedback: \"{{phishing_user_feedback}}\"\n\nCyber SOAR — Security Operations Center\nIncident Reference: {{incidentId}}"
           }
         }
       },
@@ -869,31 +840,15 @@
         "target": "n13-parallel"
       },
       {
-        "id": "e13a-14a",
-        "source": "n13-parallel",
-        "target": "n14a-vt-url",
-        "sourceHandle": "a"
-      },
-      {
-        "id": "e13b-14c",
+        "id": "e13-14c",
         "source": "n13-parallel",
         "target": "n14c-vt-ip",
-        "sourceHandle": "b"
-      },
-      {
-        "id": "e14a-14b",
-        "source": "n14a-vt-url",
-        "target": "n14b-vt-domain"
+        "sourceHandle": "a"
       },
       {
         "id": "e14c-14d",
         "source": "n14c-vt-ip",
         "target": "n14d-whois"
-      },
-      {
-        "id": "e14b-15",
-        "source": "n14b-vt-domain",
-        "target": "n15-merge"
       },
       {
         "id": "e14d-15",
@@ -906,8 +861,13 @@
         "target": "n15b-loop-vt-urls"
       },
       {
-        "id": "e15b-15c",
+        "id": "e15b-15d",
         "source": "n15b-loop-vt-urls",
+        "target": "n15d-update-ioc-scores"
+      },
+      {
+        "id": "e15d-15c",
+        "source": "n15d-update-ioc-scores",
         "target": "n15c-url-max"
       },
       {
