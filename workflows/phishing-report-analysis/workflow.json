@@ -465,11 +465,49 @@
         }
       },
       {
+        "id": "n15f-loop-detonate-urls",
+        "type": "logic",
+        "position": {
+          "x": 400,
+          "y": 3060
+        },
+        "data": {
+          "label": "Detonate All Phishing URLs",
+          "nodeType": "LOOP",
+          "config": {
+            "arrayPath": "phishing_urls",
+            "itemVariable": "detonate_url",
+            "resultVariable": "sandbox_url_results",
+            "maxItems": "5",
+            "bodyAction": {
+              "type": "DETONATE_URL",
+              "sandbox": "any_run"
+            }
+          }
+        }
+      },
+      {
+        "id": "n15g-delay",
+        "type": "action",
+        "position": {
+          "x": 400,
+          "y": 3180
+        },
+        "data": {
+          "label": "Wait for Sandbox Results (5 min)",
+          "nodeType": "DELAY",
+          "config": {
+            "duration": "5",
+            "unit": "minutes"
+          }
+        }
+      },
+      {
         "id": "n15d-update-ioc-scores",
         "type": "action",
         "position": {
           "x": 400,
-          "y": 3100
+          "y": 3420
         },
         "data": {
           "label": "Update IOC Scores from VT",
@@ -482,7 +520,7 @@
         "type": "logic",
         "position": {
           "x": 400,
-          "y": 3260
+          "y": 3500
         },
         "data": {
           "label": "Enrichment Score Critical? (<=20)",
@@ -497,7 +535,7 @@
         "type": "transform",
         "position": {
           "x": 400,
-          "y": 3420
+          "y": 3660
         },
         "data": {
           "label": "Extract URL Max Malicious",
@@ -513,7 +551,7 @@
         "type": "transform",
         "position": {
           "x": 400,
-          "y": 3580
+          "y": 3820
         },
         "data": {
           "label": "Compute Total Malicious Score",
@@ -529,7 +567,7 @@
         "type": "transform",
         "position": {
           "x": 400,
-          "y": 3740
+          "y": 3980
         },
         "data": {
           "label": "Extract Harmless Score",
@@ -545,7 +583,7 @@
         "type": "logic",
         "position": {
           "x": 400,
-          "y": 3900
+          "y": 4140
         },
         "data": {
           "label": "Trusted Domain? (harmless >= 10)",
@@ -560,7 +598,7 @@
         "type": "logic",
         "position": {
           "x": 400,
-          "y": 4060
+          "y": 4300
         },
         "data": {
           "label": "Has Suspicious URL?",
@@ -575,7 +613,7 @@
         "type": "sandbox",
         "position": {
           "x": 150,
-          "y": 4220
+          "y": 4460
         },
         "data": {
           "label": "Detonate Suspicious URL",
@@ -591,7 +629,7 @@
         "type": "logic",
         "position": {
           "x": 400,
-          "y": 4380
+          "y": 4620
         },
         "data": {
           "label": "High Risk? (malicious >= 5)",
@@ -606,7 +644,7 @@
         "type": "action",
         "position": {
           "x": 120,
-          "y": 4540
+          "y": 4780
         },
         "data": {
           "label": "Set ESCALATED — Phishing Confirmed",
@@ -623,7 +661,7 @@
         "type": "human",
         "position": {
           "x": 120,
-          "y": 4700
+          "y": 4940
         },
         "data": {
           "label": "Notify SOC — Phishing Confirmed",
@@ -639,7 +677,7 @@
         "type": "action",
         "position": {
           "x": 120,
-          "y": 4860
+          "y": 5100
         },
         "data": {
           "label": "Email Reporter — Phishing Confirmed",
@@ -656,7 +694,7 @@
         "type": "action",
         "position": {
           "x": 120,
-          "y": 5020
+          "y": 5260
         },
         "data": {
           "label": "SMS Admin — Phishing Alert",
@@ -672,7 +710,7 @@
         "type": "logic",
         "position": {
           "x": 680,
-          "y": 4540
+          "y": 4780
         },
         "data": {
           "label": "Suspicious? (malicious >= 3)",
@@ -687,7 +725,7 @@
         "type": "action",
         "position": {
           "x": 560,
-          "y": 4700
+          "y": 4940
         },
         "data": {
           "label": "Set MEDIUM Risk — Under Review",
@@ -704,7 +742,7 @@
         "type": "action",
         "position": {
           "x": 560,
-          "y": 4860
+          "y": 5100
         },
         "data": {
           "label": "Email Reporter — Under Review",
@@ -721,7 +759,7 @@
         "type": "action",
         "position": {
           "x": 860,
-          "y": 4540
+          "y": 4780
         },
         "data": {
           "label": "Set LOW Risk — No Threat",
@@ -738,7 +776,7 @@
         "type": "action",
         "position": {
           "x": 860,
-          "y": 4700
+          "y": 4940
         },
         "data": {
           "label": "Email Reporter — No Threat Detected",
@@ -857,8 +895,18 @@
         "target": "n15b-loop-vt-urls"
       },
       {
-        "id": "e15b-15d",
+        "id": "e15b-15f",
         "source": "n15b-loop-vt-urls",
+        "target": "n15f-loop-detonate-urls"
+      },
+      {
+        "id": "e15f-15g",
+        "source": "n15f-loop-detonate-urls",
+        "target": "n15g-delay"
+      },
+      {
+        "id": "e15g-15d",
+        "source": "n15g-delay",
         "target": "n15d-update-ioc-scores"
       },
       {
