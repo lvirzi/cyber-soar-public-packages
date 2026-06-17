@@ -530,7 +530,7 @@
           "label": "Extract URL Max Malicious",
           "nodeType": "JMESPATH",
           "config": {
-            "query": "vt_url_scan_results[].malicious | [?@ != `null`] | max(@)",
+            "query": "(vt_url_scan_results || `[]`)[].malicious | [?@ != `null`] | max(@)",
             "output_var": "url_max_malicious"
           }
         }
@@ -546,7 +546,7 @@
           "label": "Compute Total Malicious Score",
           "nodeType": "JMESPATH",
           "config": {
-            "query": "[url_max_malicious, vt_ip.malicious, vt_domain.malicious] | [?@ != `null`] | max(@)",
+            "query": "[url_max_malicious, vt_ip.malicious, vt_domain.malicious] | [?@ != `null`] | max(@) || `0`",
             "output_var": "total_malicious"
           }
         }
