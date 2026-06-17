@@ -366,11 +366,27 @@
         }
       },
       {
+        "id": "n12b-add-iocs",
+        "type": "action",
+        "position": {
+          "x": 400,
+          "y": 1960
+        },
+        "data": {
+          "label": "Add IOCs to Incident",
+          "nodeType": "ADD_IOCS",
+          "config": {
+            "urlsPath": "phishing_urls",
+            "ipsPath": "phishing_ips"
+          }
+        }
+      },
+      {
         "id": "n13-parallel",
         "type": "logic",
         "position": {
           "x": 400,
-          "y": 2020
+          "y": 2100
         },
         "data": {
           "label": "Parallel Enrichment",
@@ -504,17 +520,33 @@
         }
       },
       {
+        "id": "n15c-url-max",
+        "type": "transform",
+        "position": {
+          "x": 400,
+          "y": 2720
+        },
+        "data": {
+          "label": "Extract URL Max Malicious",
+          "nodeType": "JMESPATH",
+          "config": {
+            "query": "vt_url_scan_results[].malicious | [?@ != `null`] | max(@)",
+            "output_var": "url_max_malicious"
+          }
+        }
+      },
+      {
         "id": "n16-compute-score",
         "type": "transform",
         "position": {
           "x": 400,
-          "y": 2800
+          "y": 2840
         },
         "data": {
           "label": "Compute Total Malicious Score",
           "nodeType": "JMESPATH",
           "config": {
-            "query": "max([vt_url_scan_results[?malicious != `null`].malicious | max(@), vt_ip.malicious, vt_domain.malicious][?@ != `null`])",
+            "query": "[url_max_malicious, vt_ip.malicious, vt_domain.malicious] | [?@ != `null`] | max(@)",
             "output_var": "total_malicious"
           }
         }
@@ -827,8 +859,13 @@
         "target": "n12-first-ip"
       },
       {
-        "id": "e12-13",
+        "id": "e12-12b",
         "source": "n12-first-ip",
+        "target": "n12b-add-iocs"
+      },
+      {
+        "id": "e12b-13",
+        "source": "n12b-add-iocs",
         "target": "n13-parallel"
       },
       {
@@ -869,8 +906,13 @@
         "target": "n15b-loop-vt-urls"
       },
       {
-        "id": "e15b-16",
+        "id": "e15b-15c",
         "source": "n15b-loop-vt-urls",
+        "target": "n15c-url-max"
+      },
+      {
+        "id": "e15c-16",
+        "source": "n15c-url-max",
         "target": "n16-compute-score"
       },
       {
