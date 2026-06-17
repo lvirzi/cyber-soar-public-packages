@@ -1,6 +1,6 @@
 {
   "name": "Phishing Report Analysis — POP3/Graph Mail",
-  "description": "Analisi automatica delle segnalazioni di phishing. Estrae IOC, esegue enrichment parallelo con VirusTotal e WHOIS. Tuning: se il dominio ha >= 10 voti harmless su VT → trusted (LOW, no alert); se malicious >= 5 → HIGH; se malicious >= 3 → MEDIUM; altrimenti LOW.",
+  "description": "Analisi automatica delle segnalazioni di phishing. Estrae IOC dall'email originale allegata, arricchisce con VirusTotal (URL loop + IP) e WHOIS. Score enrichment critico (<=20) cortocircuita a ESCALATED+HIGH. Trusted bypass solo su URL clean. Soglie: malicious>=5 → ESCALATED+HIGH, >=3 → RESOLVED+MEDIUM, altrimenti RESOLVED+LOW.",
   "status": "ACTIVE",
   "tags": [
     "phishing",
@@ -17,7 +17,7 @@
         "type": "trigger",
         "position": {
           "x": 400,
-          "y": 40
+          "y": 50
         },
         "data": {
           "label": "Phishing Report Received",
@@ -32,7 +32,7 @@
         "type": "logic",
         "position": {
           "x": 400,
-          "y": 180
+          "y": 200
         },
         "data": {
           "label": "Is Phishing Report?",
@@ -46,11 +46,11 @@
         "id": "n3-noop-exit",
         "type": "action",
         "position": {
-          "x": 700,
-          "y": 180
+          "x": 750,
+          "y": 200
         },
         "data": {
-          "label": "Not a Phishing Report — Exit",
+          "label": "Not Phishing — Exit",
           "nodeType": "NO_OP",
           "config": {}
         }
@@ -60,7 +60,7 @@
         "type": "transform",
         "position": {
           "x": 400,
-          "y": 340
+          "y": 360
         },
         "data": {
           "label": "Extract Reporter Email",
@@ -92,7 +92,7 @@
         "type": "transform",
         "position": {
           "x": 400,
-          "y": 500
+          "y": 520
         },
         "data": {
           "label": "Extract Reported Email",
@@ -124,7 +124,7 @@
         "type": "transform",
         "position": {
           "x": 400,
-          "y": 660
+          "y": 680
         },
         "data": {
           "label": "Extract Reported Domain",
@@ -156,7 +156,7 @@
         "type": "transform",
         "position": {
           "x": 400,
-          "y": 820
+          "y": 840
         },
         "data": {
           "label": "Extract User Feedback",
@@ -188,10 +188,10 @@
         "type": "transform",
         "position": {
           "x": 400,
-          "y": 980
+          "y": 1000
         },
         "data": {
-          "label": "Store Reporter in Context",
+          "label": "Store Reporter",
           "nodeType": "WRITE_CONTEXT",
           "config": {
             "path": "phishing.reporter",
@@ -220,7 +220,7 @@
         "type": "transform",
         "position": {
           "x": 400,
-          "y": 1220
+          "y": 1200
         },
         "data": {
           "label": "Store User Feedback",
@@ -236,10 +236,10 @@
         "type": "transform",
         "position": {
           "x": 400,
-          "y": 1300
+          "y": 1360
         },
         "data": {
-          "label": "Read Original Phishing Email (.eml)",
+          "label": "Read Original Phishing Email",
           "nodeType": "READ_ATTACHMENT",
           "config": {
             "mimeType": "message/rfc822",
@@ -252,10 +252,10 @@
         "type": "transform",
         "position": {
           "x": 400,
-          "y": 1380
+          "y": 1500
         },
         "data": {
-          "label": "Read Email Headers (.txt)",
+          "label": "Read Email Headers",
           "nodeType": "READ_ATTACHMENT",
           "config": {
             "fileName": "headers.txt",
@@ -268,7 +268,7 @@
         "type": "transform",
         "position": {
           "x": 400,
-          "y": 1460
+          "y": 1660
         },
         "data": {
           "label": "Extract URLs from EML",
@@ -296,10 +296,10 @@
         "type": "transform",
         "position": {
           "x": 400,
-          "y": 1540
+          "y": 1820
         },
         "data": {
-          "label": "Extract IPs from Body",
+          "label": "Extract IPs from Headers",
           "nodeType": "DATA_TRANSFORM",
           "config": {
             "inputExpression": "{{headers_content}}",
@@ -324,7 +324,7 @@
         "type": "transform",
         "position": {
           "x": 400,
-          "y": 1700
+          "y": 1980
         },
         "data": {
           "label": "Get First URL",
@@ -347,7 +347,7 @@
         "type": "transform",
         "position": {
           "x": 400,
-          "y": 1860
+          "y": 2140
         },
         "data": {
           "label": "Get First IP",
@@ -370,7 +370,7 @@
         "type": "action",
         "position": {
           "x": 400,
-          "y": 1960
+          "y": 2300
         },
         "data": {
           "label": "Add IOCs to Incident",
@@ -386,7 +386,7 @@
         "type": "integration",
         "position": {
           "x": 400,
-          "y": 2200
+          "y": 2460
         },
         "data": {
           "label": "VT — IP Lookup",
@@ -407,7 +407,7 @@
         "type": "integration",
         "position": {
           "x": 400,
-          "y": 2380
+          "y": 2620
         },
         "data": {
           "label": "WHOIS — Domain Lookup",
@@ -428,10 +428,10 @@
         "type": "transform",
         "position": {
           "x": 400,
-          "y": 2560
+          "y": 2780
         },
         "data": {
-          "label": "Merge Enrichment Results",
+          "label": "Enrichment Complete",
           "nodeType": "MERGE",
           "config": {}
         }
@@ -441,7 +441,7 @@
         "type": "logic",
         "position": {
           "x": 400,
-          "y": 2640
+          "y": 2940
         },
         "data": {
           "label": "VT Scan All URLs",
@@ -469,7 +469,7 @@
         "type": "action",
         "position": {
           "x": 400,
-          "y": 2680
+          "y": 3100
         },
         "data": {
           "label": "Update IOC Scores from VT",
@@ -482,7 +482,7 @@
         "type": "logic",
         "position": {
           "x": 400,
-          "y": 2680
+          "y": 3260
         },
         "data": {
           "label": "Enrichment Score Critical? (<=20)",
@@ -497,7 +497,7 @@
         "type": "transform",
         "position": {
           "x": 400,
-          "y": 2840
+          "y": 3420
         },
         "data": {
           "label": "Extract URL Max Malicious",
@@ -513,7 +513,7 @@
         "type": "transform",
         "position": {
           "x": 400,
-          "y": 2840
+          "y": 3580
         },
         "data": {
           "label": "Compute Total Malicious Score",
@@ -529,7 +529,7 @@
         "type": "transform",
         "position": {
           "x": 400,
-          "y": 2860
+          "y": 3740
         },
         "data": {
           "label": "Extract Harmless Score",
@@ -545,7 +545,7 @@
         "type": "logic",
         "position": {
           "x": 400,
-          "y": 3000
+          "y": 3900
         },
         "data": {
           "label": "Trusted Domain? (harmless >= 10)",
@@ -560,7 +560,7 @@
         "type": "logic",
         "position": {
           "x": 400,
-          "y": 3160
+          "y": 4060
         },
         "data": {
           "label": "Has Suspicious URL?",
@@ -574,8 +574,8 @@
         "id": "n18-detonate-url",
         "type": "sandbox",
         "position": {
-          "x": 120,
-          "y": 3340
+          "x": 150,
+          "y": 4220
         },
         "data": {
           "label": "Detonate Suspicious URL",
@@ -591,7 +591,7 @@
         "type": "logic",
         "position": {
           "x": 400,
-          "y": 3520
+          "y": 4380
         },
         "data": {
           "label": "High Risk? (malicious >= 5)",
@@ -606,15 +606,15 @@
         "type": "action",
         "position": {
           "x": 120,
-          "y": 3700
+          "y": 4540
         },
         "data": {
-          "label": "Set HIGH Risk — Phishing Confirmed",
+          "label": "Set ESCALATED — Phishing Confirmed",
           "nodeType": "UPDATE_INCIDENT",
           "config": {
             "severity": "HIGH",
-            "status": "RESOLVED",
-            "notes": "PHISHING CONFIRMED (auto-resolved) — VT malicious: {{total_malicious}}, harmless: {{harmless_score}}. Reported: {{phishing_reported_email}}. Registrar: {{whois_domain.registrar}}. Feedback: {{phishing_user_feedback}}"
+            "status": "ESCALATED",
+            "notes": "PHISHING CONFIRMED — ESCALATED per analisi SOC. VT malicious: {{total_malicious}}, enrichment score: {{ioc_risk_score}}. Reported: {{phishing_reported_email}}. Registrar: {{whois_domain.registrar}}. Feedback: {{phishing_user_feedback}}"
           }
         }
       },
@@ -623,13 +623,13 @@
         "type": "human",
         "position": {
           "x": 120,
-          "y": 3860
+          "y": 4700
         },
         "data": {
           "label": "Notify SOC — Phishing Confirmed",
           "nodeType": "NOTIFICATION",
           "config": {
-            "message": "PHISHING CONFIRMED — {{total_malicious}} VT detections (harmless: {{harmless_score}}). Reporter: {{phishing_reporter}} | Reported: {{phishing_reported_email}} | Domain: {{phishing_reported_domain}}",
+            "message": "PHISHING CONFIRMED ({{total_malicious}} VT detections, score {{ioc_risk_score}}). Reporter: {{phishing_reporter}} | Reported: {{phishing_reported_email}} | Domain: {{phishing_reported_domain}}",
             "targetType": "all_analysts"
           }
         }
@@ -639,7 +639,7 @@
         "type": "action",
         "position": {
           "x": 120,
-          "y": 4020
+          "y": 4860
         },
         "data": {
           "label": "Email Reporter — Phishing Confirmed",
@@ -647,7 +647,7 @@
           "config": {
             "to": "{{email.from}}",
             "subject": "Phishing Report Confirmed — {{phishing_reported_email}}",
-            "body": "Dear {{email.from}},\n\nThank you for reporting the suspicious email from {{phishing_reported_email}}.\n\nVERDICT: PHISHING CONFIRMED\n\nOur automated analysis detected {{total_malicious}} malicious indicators across multiple threat intelligence sources.\n\nDetails:\n- Reported sender: {{phishing_reported_email}}\n- Domain: {{phishing_reported_domain}}\n- Domain registration: {{whois_domain.registrar}}\n- VirusTotal (URLs in email): {{total_malicious}} max malicious detections\\n- VirusTotal (IP): {{vt_ip.malicious}} malicious ({{vt_ip.country}})\n- VirusTotal (URLs in email): see full report\n\nAction taken: The incident has been escalated to our SOC team.\n\nRecommendations:\n1. Do NOT click any links in the reported email\n2. Do NOT open any attachments\n3. If you already interacted with the email, contact IT Security immediately\n\nYour feedback: \"{{phishing_user_feedback}}\"\n\nCyber SOAR — Security Operations Center\nIncident Reference: {{incidentId}}"
+            "body": "Dear {{email.from}},\n\nThank you for reporting the suspicious email from {{phishing_reported_email}}.\n\nVERDICT: PHISHING CONFIRMED — ESCALATED\n\nOur automated analysis detected {{total_malicious}} malicious indicators. The incident has been escalated to our SOC team for immediate investigation.\n\nDetails:\n- Reported sender: {{phishing_reported_email}}\n- Domain: {{phishing_reported_domain}}\n- Domain registration: {{whois_domain.registrar}}\n- VirusTotal (IP): {{vt_ip.malicious}} malicious\n- Enrichment risk score: {{ioc_risk_score}}/100 (lower = more dangerous)\n\nRecommendations:\n1. Do NOT click any links in the reported email\n2. Do NOT open any attachments\n3. If you already interacted with the email, contact IT Security immediately\n\nYour feedback: \"{{phishing_user_feedback}}\"\n\nCyber SOAR — Security Operations Center\nIncident Reference: {{incidentId}}"
           }
         }
       },
@@ -656,14 +656,14 @@
         "type": "action",
         "position": {
           "x": 120,
-          "y": 4180
+          "y": 5020
         },
         "data": {
           "label": "SMS Admin — Phishing Alert",
           "nodeType": "SEND_SMS",
           "config": {
             "to": "+39XXXXXXXXXX",
-            "message": "CYBER SOAR ALERT [HIGH] Phishing confermato: {{phishing_reported_email}} ({{total_malicious}} VT detections). Incident: {{incidentId}}. Reporter: {{email.from}}"
+            "message": "CYBER SOAR [HIGH ESCALATED] Phishing confermato: {{phishing_reported_email}} ({{total_malicious}} VT detections, score {{ioc_risk_score}}). Incident: {{incidentId}}. Reporter: {{email.from}}"
           }
         }
       },
@@ -672,7 +672,7 @@
         "type": "logic",
         "position": {
           "x": 680,
-          "y": 3700
+          "y": 4540
         },
         "data": {
           "label": "Suspicious? (malicious >= 3)",
@@ -687,7 +687,7 @@
         "type": "action",
         "position": {
           "x": 560,
-          "y": 3860
+          "y": 4700
         },
         "data": {
           "label": "Set MEDIUM Risk — Under Review",
@@ -695,7 +695,7 @@
           "config": {
             "severity": "MEDIUM",
             "status": "RESOLVED",
-            "notes": "SUSPICIOUS (auto-resolved) — VT malicious: {{total_malicious}} (threshold: 3), harmless: {{harmless_score}}. Under review flag set. Reported: {{phishing_reported_email}}. Feedback: {{phishing_user_feedback}}"
+            "notes": "SUSPICIOUS (auto-resolved) — VT malicious: {{total_malicious}}, score: {{ioc_risk_score}}. Reported: {{phishing_reported_email}}. Feedback: {{phishing_user_feedback}}"
           }
         }
       },
@@ -704,7 +704,7 @@
         "type": "action",
         "position": {
           "x": 560,
-          "y": 4020
+          "y": 4860
         },
         "data": {
           "label": "Email Reporter — Under Review",
@@ -712,7 +712,7 @@
           "config": {
             "to": "{{email.from}}",
             "subject": "Phishing Report Under Review — {{phishing_reported_email}}",
-            "body": "Dear {{email.from}},\n\nThank you for reporting the suspicious email from {{phishing_reported_email}}.\n\nVERDICT: SUSPICIOUS — UNDER REVIEW\n\nOur automated analysis detected {{total_malicious}} indicator(s) that require manual review.\n\nDetails:\n- Reported sender: {{phishing_reported_email}}\n- Domain: {{phishing_reported_domain}}\n- VirusTotal (URLs in email): {{total_malicious}} max malicious detections\\n- VirusTotal (IP): {{vt_ip.malicious}} malicious\n\nRecommendation: Exercise caution with this email. Do not click links or open attachments until you receive our final verdict.\n\nYour feedback: \"{{phishing_user_feedback}}\"\n\nCyber SOAR — Security Operations Center\nIncident Reference: {{incidentId}}"
+            "body": "Dear {{email.from}},\n\nThank you for reporting the suspicious email from {{phishing_reported_email}}.\n\nVERDICT: SUSPICIOUS — UNDER REVIEW\n\nOur automated analysis detected {{total_malicious}} indicator(s) that require manual review.\n\nDetails:\n- Reported sender: {{phishing_reported_email}}\n- Domain: {{phishing_reported_domain}}\n- VirusTotal (IP): {{vt_ip.malicious}} malicious\n\nRecommendation: Exercise caution. Do not click links or open attachments until you receive our final verdict.\n\nYour feedback: \"{{phishing_user_feedback}}\"\n\nCyber SOAR — Security Operations Center\nIncident Reference: {{incidentId}}"
           }
         }
       },
@@ -721,7 +721,7 @@
         "type": "action",
         "position": {
           "x": 860,
-          "y": 3700
+          "y": 4540
         },
         "data": {
           "label": "Set LOW Risk — No Threat",
@@ -729,7 +729,7 @@
           "config": {
             "severity": "LOW",
             "status": "RESOLVED",
-            "notes": "LOW RISK — VT malicious: {{total_malicious}}, harmless: {{harmless_score}} (trusted if >= 10). Reported: {{phishing_reported_email}}. Feedback: {{phishing_user_feedback}}"
+            "notes": "LOW RISK — VT malicious: {{total_malicious}}, harmless: {{harmless_score}}, score: {{ioc_risk_score}}. Reported: {{phishing_reported_email}}. Feedback: {{phishing_user_feedback}}"
           }
         }
       },
@@ -738,7 +738,7 @@
         "type": "action",
         "position": {
           "x": 860,
-          "y": 3860
+          "y": 4700
         },
         "data": {
           "label": "Email Reporter — No Threat Detected",
@@ -746,7 +746,7 @@
           "config": {
             "to": "{{email.from}}",
             "subject": "Phishing Report Reviewed — No Threat Detected — {{phishing_reported_email}}",
-            "body": "Dear {{email.from}},\n\nThank you for reporting the email from {{phishing_reported_email}}.\n\nVERDICT: NO THREAT DETECTED\n\nOur automated analysis did not find significant malicious indicators.\n\nDetails:\n- Reported sender: {{phishing_reported_email}}\n- Domain: {{phishing_reported_domain}}\n- VirusTotal (domain): {{vt_domain.malicious}} malicious, {{vt_domain.harmless}} harmless (trusted threshold: 10)\n- VirusTotal (IP): {{vt_ip.malicious}} malicious\n- WHOIS registration: {{whois_domain.registrar}}\n\nThe email appears to be from a legitimate sender. If you continue to feel uncertain, please contact your IT Security team.\n\nYour feedback: \"{{phishing_user_feedback}}\"\n\nCyber SOAR — Security Operations Center\nIncident Reference: {{incidentId}}"
+            "body": "Dear {{email.from}},\n\nThank you for reporting the email from {{phishing_reported_email}}.\n\nVERDICT: NO THREAT DETECTED\n\nOur automated analysis did not find significant malicious indicators.\n\nDetails:\n- Reported sender: {{phishing_reported_email}}\n- Domain: {{phishing_reported_domain}}\n- VirusTotal harmless votes: {{harmless_score}} (trusted threshold: 10)\n- WHOIS registration: {{whois_domain.registrar}}\n\nThe email appears to be from a legitimate sender. If you continue to feel uncertain, please contact your IT Security team.\n\nYour feedback: \"{{phishing_user_feedback}}\"\n\nCyber SOAR — Security Operations Center\nIncident Reference: {{incidentId}}"
           }
         }
       }
@@ -871,7 +871,7 @@
         "source": "n15e-if-enrichment-critical",
         "target": "n20-update-high",
         "sourceHandle": "true",
-        "label": "Enrichment score critical (<=20)"
+        "label": "Enrichment critical (<=20)"
       },
       {
         "id": "e15ef-15c",
@@ -965,7 +965,7 @@
         "label": ">=3 detections"
       },
       {
-        "id": "e23f-26b",
+        "id": "e23f-26",
         "source": "n23-if-suspicious",
         "target": "n26-update-low",
         "sourceHandle": "false",
