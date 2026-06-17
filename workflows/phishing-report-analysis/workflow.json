@@ -232,17 +232,49 @@
         }
       },
       {
-        "id": "n9-extract-urls",
+        "id": "n8d-read-eml",
+        "type": "transform",
+        "position": {
+          "x": 400,
+          "y": 1300
+        },
+        "data": {
+          "label": "Read Original Phishing Email (.eml)",
+          "nodeType": "READ_ATTACHMENT",
+          "config": {
+            "mimeType": "message/rfc822",
+            "outputPath": "eml_content"
+          }
+        }
+      },
+      {
+        "id": "n8e-read-headers",
         "type": "transform",
         "position": {
           "x": 400,
           "y": 1380
         },
         "data": {
-          "label": "Extract URLs from Body",
+          "label": "Read Email Headers (.txt)",
+          "nodeType": "READ_ATTACHMENT",
+          "config": {
+            "fileName": "headers.txt",
+            "outputPath": "headers_content"
+          }
+        }
+      },
+      {
+        "id": "n9-extract-urls",
+        "type": "transform",
+        "position": {
+          "x": 400,
+          "y": 1460
+        },
+        "data": {
+          "label": "Extract URLs from EML",
           "nodeType": "DATA_TRANSFORM",
           "config": {
-            "inputExpression": "{{email.bodyText}}",
+            "inputExpression": "{{eml_content}}",
             "outputPath": "phishing_urls",
             "transformations": [
               {
@@ -270,7 +302,7 @@
           "label": "Extract IPs from Body",
           "nodeType": "DATA_TRANSFORM",
           "config": {
-            "inputExpression": "{{email.bodyText}}",
+            "inputExpression": "{{headers_content}}",
             "outputPath": "phishing_ips",
             "transformations": [
               {
@@ -444,17 +476,45 @@
         }
       },
       {
+        "id": "n15b-loop-vt-urls",
+        "type": "logic",
+        "position": {
+          "x": 400,
+          "y": 2640
+        },
+        "data": {
+          "label": "VT Scan All URLs",
+          "nodeType": "LOOP",
+          "config": {
+            "arrayPath": "phishing_urls",
+            "itemVariable": "loop_url",
+            "resultVariable": "vt_url_scan_results",
+            "maxItems": "10",
+            "bodyAction": {
+              "type": "INTEGRATION_ACTION",
+              "integrationSlug": "virustotal",
+              "actionSlug": "lookup_url",
+              "installedIntegrationId": "",
+              "inputs": {
+                "url": "{{loop_url}}"
+              },
+              "outputVariable": "vt_loop_url_result"
+            }
+          }
+        }
+      },
+      {
         "id": "n16-compute-score",
         "type": "transform",
         "position": {
           "x": 400,
-          "y": 2720
+          "y": 2800
         },
         "data": {
-          "label": "Extract Malicious Score",
+          "label": "Compute Total Malicious Score",
           "nodeType": "JMESPATH",
           "config": {
-            "query": "vt_domain.malicious",
+            "query": "max([vt_url_scan_results[?malicious != `null`].malicious | max(@), vt_ip.malicious, vt_domain.malicious][?@ != `null`])",
             "output_var": "total_malicious"
           }
         }
@@ -582,7 +642,7 @@
           "config": {
             "to": "{{email.from}}",
             "subject": "Phishing Report Confirmed — {{phishing_reported_email}}",
-            "body": "Dear {{email.from}},\n\nThank you for reporting the suspicious email from {{phishing_reported_email}}.\n\nVERDICT: PHISHING CONFIRMED\n\nOur automated analysis detected {{total_malicious}} malicious indicators (VT harmless votes: {{harmless_score}}).\n\nDetails:\n- Reported sender: {{phishing_reported_email}}\n- Domain: {{phishing_reported_domain}}\n- Domain registration: {{whois_domain.registrar}}\n- VirusTotal malicious: {{vt_domain.malicious}}\n- VirusTotal suspicious: {{vt_domain.suspicious}}\n- VirusTotal harmless: {{vt_domain.harmless}}\n\nAction taken: The incident has been escalated to our SOC team.\n\nRecommendations:\n1. Do NOT click any links in the reported email\n2. Do NOT open any attachments\n3. If you already interacted with the email, contact IT Security immediately\n\nYour feedback: \"{{phishing_user_feedback}}\"\n\nCyber SOAR — Security Operations Center\nIncident Reference: {{incidentId}}"
+            "body": "Dear {{email.from}},\n\nThank you for reporting the suspicious email from {{phishing_reported_email}}.\n\nVERDICT: PHISHING CONFIRMED\n\nOur automated analysis detected {{total_malicious}} malicious indicators across multiple threat intelligence sources.\n\nDetails:\n- Reported sender: {{phishing_reported_email}}\n- Domain: {{phishing_reported_domain}}\n- Domain registration: {{whois_domain.registrar}}\n- VirusTotal (domain): {{vt_domain.malicious}} malicious, {{vt_domain.harmless}} harmless\n- VirusTotal (IP): {{vt_ip.malicious}} malicious ({{vt_ip.country}})\n- VirusTotal (URLs in email): see full report\n\nAction taken: The incident has been escalated to our SOC team.\n\nRecommendations:\n1. Do NOT click any links in the reported email\n2. Do NOT open any attachments\n3. If you already interacted with the email, contact IT Security immediately\n\nYour feedback: \"{{phishing_user_feedback}}\"\n\nCyber SOAR — Security Operations Center\nIncident Reference: {{incidentId}}"
           }
         }
       },
@@ -647,7 +707,7 @@
           "config": {
             "to": "{{email.from}}",
             "subject": "Phishing Report Under Review — {{phishing_reported_email}}",
-            "body": "Dear {{email.from}},\n\nThank you for reporting the suspicious email from {{phishing_reported_email}}.\n\nVERDICT: SUSPICIOUS — UNDER REVIEW\n\nOur automated analysis detected {{total_malicious}} indicator(s) that require manual review.\n\nDetails:\n- Reported sender: {{phishing_reported_email}}\n- Domain: {{phishing_reported_domain}}\n- VirusTotal malicious: {{vt_domain.malicious}}\n- VirusTotal harmless: {{vt_domain.harmless}}\n\nRecommendation: Exercise caution with this email. Do not click links or open attachments until you receive our final verdict.\n\nYour feedback: \"{{phishing_user_feedback}}\"\n\nCyber SOAR — Security Operations Center\nIncident Reference: {{incidentId}}"
+            "body": "Dear {{email.from}},\n\nThank you for reporting the suspicious email from {{phishing_reported_email}}.\n\nVERDICT: SUSPICIOUS — UNDER REVIEW\n\nOur automated analysis detected {{total_malicious}} indicator(s) that require manual review.\n\nDetails:\n- Reported sender: {{phishing_reported_email}}\n- Domain: {{phishing_reported_domain}}\n- VirusTotal (domain): {{vt_domain.malicious}} malicious, {{vt_domain.harmless}} harmless\n- VirusTotal (IP): {{vt_ip.malicious}} malicious\n\nRecommendation: Exercise caution with this email. Do not click links or open attachments until you receive our final verdict.\n\nYour feedback: \"{{phishing_user_feedback}}\"\n\nCyber SOAR — Security Operations Center\nIncident Reference: {{incidentId}}"
           }
         }
       },
@@ -681,7 +741,7 @@
           "config": {
             "to": "{{email.from}}",
             "subject": "Phishing Report Reviewed — No Threat Detected — {{phishing_reported_email}}",
-            "body": "Dear {{email.from}},\n\nThank you for reporting the email from {{phishing_reported_email}}.\n\nVERDICT: NO THREAT DETECTED\n\nOur automated analysis did not find significant malicious indicators for the reported sender.\n\nDetails:\n- Reported sender: {{phishing_reported_email}}\n- Domain: {{phishing_reported_domain}}\n- VirusTotal malicious: {{vt_domain.malicious}}\n- VirusTotal harmless: {{vt_domain.harmless}} (trusted domain threshold: 10)\n- WHOIS registration: {{whois_domain.registrar}}\n\nThe email appears to be from a legitimate sender. If you continue to feel uncertain, please contact your IT Security team.\n\nYour feedback: \"{{phishing_user_feedback}}\"\n\nCyber SOAR — Security Operations Center\nIncident Reference: {{incidentId}}"
+            "body": "Dear {{email.from}},\n\nThank you for reporting the email from {{phishing_reported_email}}.\n\nVERDICT: NO THREAT DETECTED\n\nOur automated analysis did not find significant malicious indicators.\n\nDetails:\n- Reported sender: {{phishing_reported_email}}\n- Domain: {{phishing_reported_domain}}\n- VirusTotal (domain): {{vt_domain.malicious}} malicious, {{vt_domain.harmless}} harmless (trusted threshold: 10)\n- VirusTotal (IP): {{vt_ip.malicious}} malicious\n- WHOIS registration: {{whois_domain.registrar}}\n\nThe email appears to be from a legitimate sender. If you continue to feel uncertain, please contact your IT Security team.\n\nYour feedback: \"{{phishing_user_feedback}}\"\n\nCyber SOAR — Security Operations Center\nIncident Reference: {{incidentId}}"
           }
         }
       }
@@ -737,8 +797,18 @@
         "target": "n8c-write-feedback"
       },
       {
-        "id": "e8c-9",
+        "id": "e8c-8d",
         "source": "n8c-write-feedback",
+        "target": "n8d-read-eml"
+      },
+      {
+        "id": "e8d-8e",
+        "source": "n8d-read-eml",
+        "target": "n8e-read-headers"
+      },
+      {
+        "id": "e8e-9",
+        "source": "n8e-read-headers",
         "target": "n9-extract-urls"
       },
       {
@@ -794,8 +864,13 @@
         "target": "n15-merge"
       },
       {
-        "id": "e15-16",
+        "id": "e15-15b",
         "source": "n15-merge",
+        "target": "n15b-loop-vt-urls"
+      },
+      {
+        "id": "e15b-16",
+        "source": "n15b-loop-vt-urls",
         "target": "n16-compute-score"
       },
       {
