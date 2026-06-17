@@ -587,6 +587,22 @@
         }
       },
       {
+        "id": "n22b-sms-admin",
+        "type": "action",
+        "position": {
+          "x": 120,
+          "y": 4180
+        },
+        "data": {
+          "label": "SMS Admin — Phishing Alert",
+          "nodeType": "SEND_SMS",
+          "config": {
+            "to": "+39XXXXXXXXXX",
+            "message": "CYBER SOAR ALERT [HIGH] Phishing confermato: {{phishing_reported_email}} ({{total_malicious}} VT detections). Incident: {{incidentId}}. Reporter: {{email.from}}"
+          }
+        }
+      },
+      {
         "id": "n23-if-suspicious",
         "type": "logic",
         "position": {
@@ -848,6 +864,11 @@
         "id": "e21-22",
         "source": "n21-notify-soc-high",
         "target": "n22-email-malicious"
+      },
+      {
+        "id": "e22-22b",
+        "source": "n22-email-malicious",
+        "target": "n22b-sms-admin"
       },
       {
         "id": "e23t-24",
