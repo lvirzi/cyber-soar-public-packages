@@ -382,19 +382,6 @@
         }
       },
       {
-        "id": "n13-parallel",
-        "type": "logic",
-        "position": {
-          "x": 400,
-          "y": 2100
-        },
-        "data": {
-          "label": "Parallel Enrichment",
-          "nodeType": "PARALLEL",
-          "config": {}
-        }
-      },
-      {
         "id": "n14c-vt-ip",
         "type": "integration",
         "position": {
@@ -491,11 +478,26 @@
         }
       },
       {
+        "id": "n15e-if-enrichment-critical",
+        "type": "logic",
+        "position": {
+          "x": 400,
+          "y": 2680
+        },
+        "data": {
+          "label": "Enrichment Score Critical? (<=20)",
+          "nodeType": "IF_ELSE",
+          "config": {
+            "condition": "{{ioc_risk_score}} <= 20"
+          }
+        }
+      },
+      {
         "id": "n15c-url-max",
         "type": "transform",
         "position": {
           "x": 400,
-          "y": 2760
+          "y": 2840
         },
         "data": {
           "label": "Extract URL Max Malicious",
@@ -533,7 +535,7 @@
           "label": "Extract Harmless Score",
           "nodeType": "JMESPATH",
           "config": {
-            "query": "(vt_url_scan_results || `[]`)[].harmless | [?@ != `null`] | max(@) || `0`",
+            "query": "(vt_url_scan_results || `[]`)[?malicious == `0`].harmless | [?@ != `null`] | max(@) || `0`",
             "output_var": "harmless_score"
           }
         }
@@ -835,15 +837,9 @@
         "target": "n12b-add-iocs"
       },
       {
-        "id": "e12b-13",
+        "id": "e12b-14c",
         "source": "n12b-add-iocs",
-        "target": "n13-parallel"
-      },
-      {
-        "id": "e13-14c",
-        "source": "n13-parallel",
-        "target": "n14c-vt-ip",
-        "sourceHandle": "a"
+        "target": "n14c-vt-ip"
       },
       {
         "id": "e14c-14d",
@@ -866,9 +862,23 @@
         "target": "n15d-update-ioc-scores"
       },
       {
-        "id": "e15d-15c",
+        "id": "e15d-15e",
         "source": "n15d-update-ioc-scores",
-        "target": "n15c-url-max"
+        "target": "n15e-if-enrichment-critical"
+      },
+      {
+        "id": "e15et-20",
+        "source": "n15e-if-enrichment-critical",
+        "target": "n20-update-high",
+        "sourceHandle": "true",
+        "label": "Enrichment score critical (<=20)"
+      },
+      {
+        "id": "e15ef-15c",
+        "source": "n15e-if-enrichment-critical",
+        "target": "n15c-url-max",
+        "sourceHandle": "false",
+        "label": "Score ok — check URLs"
       },
       {
         "id": "e15c-16",
