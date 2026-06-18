@@ -478,65 +478,11 @@
         }
       },
       {
-        "id": "n15b2-filter-suspicious-urls",
-        "type": "transform",
-        "position": {
-          "x": 860,
-          "y": 2960
-        },
-        "data": {
-          "label": "Filter Suspicious URLs for Sandbox",
-          "nodeType": "JMESPATH",
-          "config": {
-            "query": "(vt_url_scan_results || `[]`)[?malicious > `0` || suspicious > `0`].item || `[]`",
-            "output_var": "urls_to_detonate"
-          }
-        }
-      },
-      {
-        "id": "n15f-loop-detonate-urls",
-        "type": "logic",
-        "position": {
-          "x": 860,
-          "y": 3120
-        },
-        "data": {
-          "label": "Detonate Suspicious URLs Only",
-          "nodeType": "LOOP",
-          "config": {
-            "arrayPath": "urls_to_detonate",
-            "itemVariable": "detonate_url",
-            "resultVariable": "sandbox_url_results",
-            "maxItems": "5",
-            "bodyAction": {
-              "type": "DETONATE_URL",
-              "sandbox": "any_run"
-            }
-          }
-        }
-      },
-      {
-        "id": "n15g-delay",
-        "type": "action",
-        "position": {
-          "x": 860,
-          "y": 3280
-        },
-        "data": {
-          "label": "Wait for Sandbox Results (5 min)",
-          "nodeType": "DELAY",
-          "config": {
-            "duration": "5",
-            "unit": "minutes"
-          }
-        }
-      },
-      {
         "id": "n15-merge",
         "type": "transform",
         "position": {
           "x": 400,
-          "y": 3280
+          "y": 2960
         },
         "data": {
           "label": "All Enrichments Complete",
@@ -549,7 +495,7 @@
         "type": "action",
         "position": {
           "x": 400,
-          "y": 3440
+          "y": 3120
         },
         "data": {
           "label": "Update IOC Scores from VT",
@@ -562,7 +508,7 @@
         "type": "logic",
         "position": {
           "x": 400,
-          "y": 3560
+          "y": 3240
         },
         "data": {
           "label": "Enrichment Score Critical? (<=20)",
@@ -577,7 +523,7 @@
         "type": "transform",
         "position": {
           "x": 400,
-          "y": 3720
+          "y": 3400
         },
         "data": {
           "label": "Extract URL Max Malicious",
@@ -593,7 +539,7 @@
         "type": "transform",
         "position": {
           "x": 400,
-          "y": 3880
+          "y": 3560
         },
         "data": {
           "label": "Compute Total Malicious Score",
@@ -609,7 +555,7 @@
         "type": "transform",
         "position": {
           "x": 400,
-          "y": 4040
+          "y": 3720
         },
         "data": {
           "label": "Extract Harmless Score",
@@ -625,7 +571,7 @@
         "type": "logic",
         "position": {
           "x": 400,
-          "y": 4200
+          "y": 3880
         },
         "data": {
           "label": "Trusted Domain? (harmless >= 10)",
@@ -640,7 +586,7 @@
         "type": "logic",
         "position": {
           "x": 400,
-          "y": 4360
+          "y": 4040
         },
         "data": {
           "label": "Has Suspicious URL?",
@@ -655,7 +601,7 @@
         "type": "sandbox",
         "position": {
           "x": 150,
-          "y": 4520
+          "y": 4200
         },
         "data": {
           "label": "Detonate Suspicious URL",
@@ -671,7 +617,7 @@
         "type": "logic",
         "position": {
           "x": 400,
-          "y": 4680
+          "y": 4360
         },
         "data": {
           "label": "High Risk? (malicious >= 5)",
@@ -686,7 +632,7 @@
         "type": "action",
         "position": {
           "x": 120,
-          "y": 4840
+          "y": 4520
         },
         "data": {
           "label": "Set ESCALATED — Phishing Confirmed",
@@ -703,7 +649,7 @@
         "type": "human",
         "position": {
           "x": 120,
-          "y": 5000
+          "y": 4680
         },
         "data": {
           "label": "Notify SOC — Phishing Confirmed",
@@ -719,7 +665,7 @@
         "type": "action",
         "position": {
           "x": 120,
-          "y": 5160
+          "y": 4840
         },
         "data": {
           "label": "Email Reporter — Phishing Confirmed",
@@ -736,7 +682,7 @@
         "type": "action",
         "position": {
           "x": 120,
-          "y": 5320
+          "y": 5000
         },
         "data": {
           "label": "SMS Admin — Phishing Alert",
@@ -752,7 +698,7 @@
         "type": "logic",
         "position": {
           "x": 680,
-          "y": 4840
+          "y": 4520
         },
         "data": {
           "label": "Suspicious? (malicious >= 3)",
@@ -767,7 +713,7 @@
         "type": "action",
         "position": {
           "x": 560,
-          "y": 5000
+          "y": 4680
         },
         "data": {
           "label": "Set MEDIUM Risk — Under Review",
@@ -784,7 +730,7 @@
         "type": "action",
         "position": {
           "x": 560,
-          "y": 5160
+          "y": 4840
         },
         "data": {
           "label": "Email Reporter — Under Review",
@@ -801,7 +747,7 @@
         "type": "action",
         "position": {
           "x": 860,
-          "y": 4840
+          "y": 4520
         },
         "data": {
           "label": "Set LOW Risk — No Threat",
@@ -818,7 +764,7 @@
         "type": "action",
         "position": {
           "x": 860,
-          "y": 5000
+          "y": 4680
         },
         "data": {
           "label": "Email Reporter — No Threat Detected",
@@ -960,23 +906,8 @@
         "target": "n15-merge"
       },
       {
-        "id": "e15b-15b2",
+        "id": "e15b-15merge",
         "source": "n15b-loop-vt-urls",
-        "target": "n15b2-filter-suspicious-urls"
-      },
-      {
-        "id": "e15b2-15f",
-        "source": "n15b2-filter-suspicious-urls",
-        "target": "n15f-loop-detonate-urls"
-      },
-      {
-        "id": "e15f-15g",
-        "source": "n15f-loop-detonate-urls",
-        "target": "n15g-delay"
-      },
-      {
-        "id": "e-15g-15merge",
-        "source": "n15g-delay",
         "target": "n15-merge"
       },
       {
