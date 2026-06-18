@@ -1,6 +1,6 @@
 {
   "name": "Phishing Report Analysis — POP3/Graph Mail",
-  "description": "Analisi automatica delle segnalazioni di phishing. Estrae IOC dall'email originale allegata, arricchisce con VirusTotal (URL loop + IP) e WHOIS. Score enrichment critico (<=20) cortocircuita a ESCALATED+HIGH. Trusted bypass solo su URL clean. Soglie: malicious>=5 → ESCALATED+HIGH, >=3 → RESOLVED+MEDIUM, altrimenti RESOLVED+LOW.",
+  "description": "Analisi automatica delle segnalazioni di phishing. Estrae IOC dall'email originale allegata, arricchisce con VirusTotal (URL loop + IP) e WHOIS in parallelo. Score enrichment critico (<=20) cortocircuita a ESCALATED+HIGH. Trusted bypass solo su URL clean. Soglie: malicious>=5 → ESCALATED+HIGH, >=3 → RESOLVED+MEDIUM, altrimenti RESOLVED+LOW.",
   "status": "ACTIVE",
   "tags": [
     "phishing",
@@ -382,11 +382,24 @@
         }
       },
       {
+        "id": "n-par1-outer",
+        "type": "logic",
+        "position": {
+          "x": 400,
+          "y": 2440
+        },
+        "data": {
+          "label": "Parallel Enrichment",
+          "nodeType": "PARALLEL",
+          "config": {}
+        }
+      },
+      {
         "id": "n14c-vt-ip",
         "type": "integration",
         "position": {
-          "x": 400,
-          "y": 2460
+          "x": 120,
+          "y": 2620
         },
         "data": {
           "label": "VT — IP Lookup",
@@ -403,11 +416,24 @@
         }
       },
       {
+        "id": "n-par2-inner",
+        "type": "logic",
+        "position": {
+          "x": 680,
+          "y": 2620
+        },
+        "data": {
+          "label": "WHOIS + VT URLs",
+          "nodeType": "PARALLEL",
+          "config": {}
+        }
+      },
+      {
         "id": "n14d-whois",
         "type": "integration",
         "position": {
-          "x": 400,
-          "y": 2620
+          "x": 500,
+          "y": 2800
         },
         "data": {
           "label": "WHOIS — Domain Lookup",
@@ -424,24 +450,11 @@
         }
       },
       {
-        "id": "n15-merge",
-        "type": "transform",
-        "position": {
-          "x": 400,
-          "y": 2780
-        },
-        "data": {
-          "label": "Enrichment Complete",
-          "nodeType": "MERGE",
-          "config": {}
-        }
-      },
-      {
         "id": "n15b-loop-vt-urls",
         "type": "logic",
         "position": {
-          "x": 400,
-          "y": 2940
+          "x": 860,
+          "y": 2800
         },
         "data": {
           "label": "VT Scan All URLs",
@@ -468,8 +481,8 @@
         "id": "n15f-loop-detonate-urls",
         "type": "logic",
         "position": {
-          "x": 400,
-          "y": 3060
+          "x": 860,
+          "y": 2960
         },
         "data": {
           "label": "Detonate All Phishing URLs",
@@ -490,8 +503,8 @@
         "id": "n15g-delay",
         "type": "action",
         "position": {
-          "x": 400,
-          "y": 3180
+          "x": 860,
+          "y": 3120
         },
         "data": {
           "label": "Wait for Sandbox Results (5 min)",
@@ -503,11 +516,24 @@
         }
       },
       {
+        "id": "n15-merge",
+        "type": "transform",
+        "position": {
+          "x": 400,
+          "y": 3280
+        },
+        "data": {
+          "label": "All Enrichments Complete",
+          "nodeType": "MERGE",
+          "config": {}
+        }
+      },
+      {
         "id": "n15d-update-ioc-scores",
         "type": "action",
         "position": {
           "x": 400,
-          "y": 3420
+          "y": 3440
         },
         "data": {
           "label": "Update IOC Scores from VT",
@@ -520,7 +546,7 @@
         "type": "logic",
         "position": {
           "x": 400,
-          "y": 3500
+          "y": 3560
         },
         "data": {
           "label": "Enrichment Score Critical? (<=20)",
@@ -535,7 +561,7 @@
         "type": "transform",
         "position": {
           "x": 400,
-          "y": 3660
+          "y": 3720
         },
         "data": {
           "label": "Extract URL Max Malicious",
@@ -551,7 +577,7 @@
         "type": "transform",
         "position": {
           "x": 400,
-          "y": 3820
+          "y": 3880
         },
         "data": {
           "label": "Compute Total Malicious Score",
@@ -567,7 +593,7 @@
         "type": "transform",
         "position": {
           "x": 400,
-          "y": 3980
+          "y": 4040
         },
         "data": {
           "label": "Extract Harmless Score",
@@ -583,7 +609,7 @@
         "type": "logic",
         "position": {
           "x": 400,
-          "y": 4140
+          "y": 4200
         },
         "data": {
           "label": "Trusted Domain? (harmless >= 10)",
@@ -598,7 +624,7 @@
         "type": "logic",
         "position": {
           "x": 400,
-          "y": 4300
+          "y": 4360
         },
         "data": {
           "label": "Has Suspicious URL?",
@@ -613,7 +639,7 @@
         "type": "sandbox",
         "position": {
           "x": 150,
-          "y": 4460
+          "y": 4520
         },
         "data": {
           "label": "Detonate Suspicious URL",
@@ -629,7 +655,7 @@
         "type": "logic",
         "position": {
           "x": 400,
-          "y": 4620
+          "y": 4680
         },
         "data": {
           "label": "High Risk? (malicious >= 5)",
@@ -644,7 +670,7 @@
         "type": "action",
         "position": {
           "x": 120,
-          "y": 4780
+          "y": 4840
         },
         "data": {
           "label": "Set ESCALATED — Phishing Confirmed",
@@ -661,7 +687,7 @@
         "type": "human",
         "position": {
           "x": 120,
-          "y": 4940
+          "y": 5000
         },
         "data": {
           "label": "Notify SOC — Phishing Confirmed",
@@ -677,7 +703,7 @@
         "type": "action",
         "position": {
           "x": 120,
-          "y": 5100
+          "y": 5160
         },
         "data": {
           "label": "Email Reporter — Phishing Confirmed",
@@ -694,7 +720,7 @@
         "type": "action",
         "position": {
           "x": 120,
-          "y": 5260
+          "y": 5320
         },
         "data": {
           "label": "SMS Admin — Phishing Alert",
@@ -710,7 +736,7 @@
         "type": "logic",
         "position": {
           "x": 680,
-          "y": 4780
+          "y": 4840
         },
         "data": {
           "label": "Suspicious? (malicious >= 3)",
@@ -725,7 +751,7 @@
         "type": "action",
         "position": {
           "x": 560,
-          "y": 4940
+          "y": 5000
         },
         "data": {
           "label": "Set MEDIUM Risk — Under Review",
@@ -742,7 +768,7 @@
         "type": "action",
         "position": {
           "x": 560,
-          "y": 5100
+          "y": 5160
         },
         "data": {
           "label": "Email Reporter — Under Review",
@@ -759,7 +785,7 @@
         "type": "action",
         "position": {
           "x": 860,
-          "y": 4780
+          "y": 4840
         },
         "data": {
           "label": "Set LOW Risk — No Threat",
@@ -776,7 +802,7 @@
         "type": "action",
         "position": {
           "x": 860,
-          "y": 4940
+          "y": 5000
         },
         "data": {
           "label": "Email Reporter — No Threat Detected",
@@ -875,24 +901,47 @@
         "target": "n12b-add-iocs"
       },
       {
-        "id": "e12b-14c",
+        "id": "e12b-par1",
         "source": "n12b-add-iocs",
-        "target": "n14c-vt-ip"
+        "target": "n-par1-outer"
       },
       {
-        "id": "e14c-14d",
+        "id": "e-par1-a-14c",
+        "source": "n-par1-outer",
+        "target": "n14c-vt-ip",
+        "sourceHandle": "A",
+        "label": "VT IP"
+      },
+      {
+        "id": "e-par1-b-par2",
+        "source": "n-par1-outer",
+        "target": "n-par2-inner",
+        "sourceHandle": "B",
+        "label": "WHOIS + VT URLs"
+      },
+      {
+        "id": "e-par2-a-14d",
+        "source": "n-par2-inner",
+        "target": "n14d-whois",
+        "sourceHandle": "A",
+        "label": "WHOIS"
+      },
+      {
+        "id": "e-par2-b-15b",
+        "source": "n-par2-inner",
+        "target": "n15b-loop-vt-urls",
+        "sourceHandle": "B",
+        "label": "VT URLs + Sandbox"
+      },
+      {
+        "id": "e-14c-15merge",
         "source": "n14c-vt-ip",
-        "target": "n14d-whois"
+        "target": "n15-merge"
       },
       {
         "id": "e14d-15",
         "source": "n14d-whois",
         "target": "n15-merge"
-      },
-      {
-        "id": "e15-15b",
-        "source": "n15-merge",
-        "target": "n15b-loop-vt-urls"
       },
       {
         "id": "e15b-15f",
@@ -905,8 +954,13 @@
         "target": "n15g-delay"
       },
       {
-        "id": "e15g-15d",
+        "id": "e-15g-15merge",
         "source": "n15g-delay",
+        "target": "n15-merge"
+      },
+      {
+        "id": "e15-15d",
+        "source": "n15-merge",
         "target": "n15d-update-ioc-scores"
       },
       {
