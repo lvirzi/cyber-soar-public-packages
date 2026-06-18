@@ -909,28 +909,28 @@
         "id": "e-par1-a-14c",
         "source": "n-par1-outer",
         "target": "n14c-vt-ip",
-        "sourceHandle": "A",
+        "sourceHandle": "a",
         "label": "VT IP"
       },
       {
         "id": "e-par1-b-par2",
         "source": "n-par1-outer",
         "target": "n-par2-inner",
-        "sourceHandle": "B",
+        "sourceHandle": "b",
         "label": "WHOIS + VT URLs"
       },
       {
         "id": "e-par2-a-14d",
         "source": "n-par2-inner",
         "target": "n14d-whois",
-        "sourceHandle": "A",
+        "sourceHandle": "a",
         "label": "WHOIS"
       },
       {
         "id": "e-par2-b-15b",
         "source": "n-par2-inner",
         "target": "n15b-loop-vt-urls",
-        "sourceHandle": "B",
+        "sourceHandle": "b",
         "label": "VT URLs + Sandbox"
       },
       {
