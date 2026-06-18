@@ -14,7 +14,7 @@
       "automated-response"
     ],
     "workflowUrl": "https://raw.githubusercontent.com/lvirzi/cyber-soar-public-packages/main/workflows/phishing-report-analysis/workflow.json",
-    "nodeCount": 43,
-    "publishedAt": "2026-06-18T08:21:35.873Z"
+    "nodeCount": 44,
+    "publishedAt": "2026-06-18T14:30:23.014Z"
   }
 ]
