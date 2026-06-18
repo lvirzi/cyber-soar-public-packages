@@ -478,17 +478,33 @@
         }
       },
       {
-        "id": "n15f-loop-detonate-urls",
-        "type": "logic",
+        "id": "n15b2-filter-suspicious-urls",
+        "type": "transform",
         "position": {
           "x": 860,
           "y": 2960
         },
         "data": {
-          "label": "Detonate All Phishing URLs",
+          "label": "Filter Suspicious URLs for Sandbox",
+          "nodeType": "JMESPATH",
+          "config": {
+            "query": "(vt_url_scan_results || `[]`)[?malicious > `0` || suspicious > `0`].item || `[]`",
+            "output_var": "urls_to_detonate"
+          }
+        }
+      },
+      {
+        "id": "n15f-loop-detonate-urls",
+        "type": "logic",
+        "position": {
+          "x": 860,
+          "y": 3120
+        },
+        "data": {
+          "label": "Detonate Suspicious URLs Only",
           "nodeType": "LOOP",
           "config": {
-            "arrayPath": "phishing_urls",
+            "arrayPath": "urls_to_detonate",
             "itemVariable": "detonate_url",
             "resultVariable": "sandbox_url_results",
             "maxItems": "5",
@@ -504,7 +520,7 @@
         "type": "action",
         "position": {
           "x": 860,
-          "y": 3120
+          "y": 3280
         },
         "data": {
           "label": "Wait for Sandbox Results (5 min)",
@@ -944,8 +960,13 @@
         "target": "n15-merge"
       },
       {
-        "id": "e15b-15f",
+        "id": "e15b-15b2",
         "source": "n15b-loop-vt-urls",
+        "target": "n15b2-filter-suspicious-urls"
+      },
+      {
+        "id": "e15b2-15f",
+        "source": "n15b2-filter-suspicious-urls",
         "target": "n15f-loop-detonate-urls"
       },
       {
